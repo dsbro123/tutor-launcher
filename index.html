@@ -1,0 +1,72 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tutor Site">
+<title>Tutor Site Launcher</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c1f24; --muted:#6b7280; --accent:#2563eb; --off:#9ca3af; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111317; --card:#1b1e24; --text:#f1f3f5; --muted:#9aa1ad; --accent:#3b82f6; --off:#4b5563; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; padding:16px;
+         background:var(--bg); color:var(--text); font:16px/1.4 system-ui, sans-serif; }
+  .card { width:100%; max-width:380px; background:var(--card); border-radius:16px; padding:28px 24px;
+          text-align:center; box-shadow:0 2px 12px rgba(0,0,0,.08); }
+  h1 { font-size:20px; margin:0 0 6px; }
+  .status { color:var(--muted); margin:0 0 22px; min-height:1.4em; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--off); margin-right:8px; }
+  .dot.on { background:#22c55e; }
+  button, a.btn { display:block; width:100%; padding:14px; border:0; border-radius:12px; font-size:17px;
+          font-weight:600; background:var(--accent); color:#fff; text-decoration:none; cursor:pointer; }
+  button.secondary { background:transparent; color:var(--accent); margin-top:10px; font-weight:500; }
+  button:disabled { background:var(--off); cursor:not-allowed; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Tutor Site</h1>
+  <p class="status"><span class="dot" id="dot"></span><span id="msg">Checking...</span></p>
+  <a class="btn" id="open" href="#" style="display:none">Open site</a>
+  <button id="off" disabled style="display:none">Site is offline</button>
+  <button class="secondary" id="refresh">Check again</button>
+</div>
+<script>
+  // Filled in by setup-launcher.ps1
+  const GIST_ID = "0c01da03be89b9969888ea765fde21cd";
+
+  const $ = id => document.getElementById(id);
+  async function check() {
+    $("msg").textContent = "Checking...";
+    $("dot").className = "dot";
+    $("open").style.display = "none";
+    $("off").style.display = "none";
+    try {
+      const r = await fetch("https://api.github.com/gists/" + GIST_ID, { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      const data = await r.json();
+      const text = (data.files["link.txt"].content || "").trim();
+      if (/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(text)) {
+        $("dot").className = "dot on";
+        $("msg").textContent = "Site is online";
+        $("open").href = text + "/dashboard";
+        $("open").style.display = "block";
+      } else {
+        $("msg").textContent = "Site is offline";
+        $("off").style.display = "block";
+      }
+    } catch (e) {
+      $("msg").textContent = "Couldn't check the site. Try again.";
+      $("off").style.display = "block";
+    }
+  }
+  $("refresh").addEventListener("click", check);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
+  check();
+</script>
+</body>
+</html>
